@@ -1,0 +1,130 @@
+21 lines (21 sloc)  632 Bytes
+   
+{% extends "base.html" %} 
+{% block title %}Home{% endblock %} 
+
+{% block content %}
+<h1 align="center">cHelper!!!</h1>
+<h3>Current breakdown:</h3>
+{% for key, value in wallet_dict.items() %}
+  <p>{{key}}: {{value}} (S${{"%.2f"|format(value*prices_dict[key])}})</p>
+{% endfor %}
+
+<h3>Current prices:</h3>
+{% for key, value in prices_dict.items() %}
+  <p>{{key}}: {{value}}</p>
+{% endfor %}
+
+<h3>Update values<h3>
+<form method="POST">
+<div class="form-group">
+  <select name="update_wallet_coin" id="update_wallet_coin">
+    {% for key in wallet_dict.keys() %}
+      <option value="{{key}}" selected>{{key}}</option>
+    {% endfor %}
+  </select> 
+
+  <input
+    type="number"
+    step="0.000001"
+    class="form-control"
+    id="update_wallet_value"
+    name="update_wallet_value"
+    placeholder="How much would you like to add? (To remove, enter a negative value)"
+  >
+  <button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</form>
+
+<h3>Live graph of total values (to be abstracted out)</h3>
+<div class="container">
+  <div class="row">
+      <div class="col-12">
+          <div class="card">
+              <div class="card-body">
+                  <canvas id="canvas"></canvas>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+<script>
+  $(document).ready(function () {
+    const config = {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: "Random Dataset",
+                backgroundColor: 'rgb(255, 99, 132)',
+                borderColor: 'rgb(255, 99, 132)',
+                data: [],
+                fill: false,
+            }],
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Creating Real-Time Charts with Flask'
+            },
+            tooltips: {
+                mode: 'index',
+                intersect: false,
+            },
+            hover: {
+                mode: 'nearest',
+                intersect: true
+            },
+            scales: {
+                xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time'
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Value'
+                    }
+                }]
+            }
+        }
+    };
+
+    const context = document.getElementById('canvas').getContext('2d');
+
+    const lineChart = new Chart(context, config);
+
+    const source = new EventSource("/home-chart-data");
+
+    source.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (config.data.labels.length === 100) { //max no. of data points on screen = 20
+            config.data.labels.shift();
+            config.data.datasets[0].data.shift();
+        }
+        config.data.labels.push(data.time);
+        config.data.datasets[0].data.push(data.value);
+        lineChart.update();
+    }
+  });  
+</script>
+
+<h3>hist data</h3>
+{% for data in hist_data %}
+  <p>does this run</p>
+  <p>{{data}}</p>
+{% endfor %}
+
+
+{% endblock %}
